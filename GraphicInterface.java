@@ -1,49 +1,113 @@
-import java.awt.Color;
-import java.awt.Font;
-import javax.swing.BorderFactory;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.border.Border;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
-public class GraphicInterface extends JFrame {
-	
-	private JButton startButton = new JButton("Start");
-	private JButton stopButton = new JButton("Stop");
-	private JTextField searchFile = new JTextField();
-	private JLabel displayText = new JLabel("Alpha Beta Gamma SUPER delta");
-	
-	public GraphicInterface(){
+@SuppressWarnings("serial")
+public class GraphicInterface extends JFrame implements ActionListener {
+    
+	private JPanel panel1;
+    public static JTextArea textArea1 = new JTextArea();
+    public static JTextArea textArea2 = new JTextArea();
+    private JButton buttonStart = new JButton();
+    private JButton buttonStop = new JButton();
+    
+    public GraphicInterface() {
+        super("CS371");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Panel
+        panel1 = new JPanel();
+        panel1.setLayout(new FlowLayout());
+
+        // Button
+        buttonStart.setText("Start");
+        buttonStart.addActionListener(this);
+        buttonStop.setText("Stop");
+        buttonStop.addActionListener(this);
+
+        // TextArea1: User input
+        textArea1.setColumns(20);
+        textArea1.setRows(5);
+        textArea1.setEditable(true);
+        textArea1.setText("Enter your file.txt here");
+        
+        //TextArea2: Displaying the file
+        textArea2.setColumns(20);
+        textArea2.setRows(5);
+        textArea2.setEditable(false);
+        textArea2.setText("The file will be displayed in this area");
+        //textArea2.setLineWrap(true);
+
+        // Add Components
+        panel1.add(textArea1);
+        panel1.add(textArea2);
+        panel1.add(buttonStart);
+        panel1.add(buttonStop);
+
+        // Add to Frame
+        this.getContentPane().add(panel1);
+
+        // Setting size and set Visible
+        this.setSize(700, 300);
+        this.setVisible(true);
+
+    }
+
+	@Override
+	public void actionPerformed(ActionEvent src) {
+
+		Object source = src.getSource();
 		
-	    this.setTitle("CS371-Assignement 1");
-	    this.setSize(400, 400);
-	    this.setLocationRelativeTo(null); // Window's position 
-	    this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	    this.setVisible(true);
-	    this.setResizable(false);	
-		
-	    //Button
-	    startButton.setBounds(210, 10, 50, 50);
-	    this.getContentPane().add(startButton);
-	    
-	    stopButton.setBounds(10,95,50,50);
-	    this.getContentPane().add(stopButton);
-	    
-	    //Text file for searching the file that we want to display
-	    
-	    searchFile.setBounds(10,10,200,50);
-	    this.getContentPane().add(searchFile);
-	    
-	    //Label for displaying the text file
-	    Border border = BorderFactory.createLineBorder(Color.BLACK, 1); // Create a border for the Jlabel
-	    displayText.setBorder(border);
-	    
-	    displayText.setFont(new java.awt.Font(Font.SANS_SERIF, Font.BOLD, 14));
-	    displayText.setForeground(Color.BLACK);
-	    displayText.setBounds(10, 80, 200, 15);
-	    this.getContentPane().add(displayText);
-    	    
+		if(source.equals(buttonStart))
+		{
+			System.out.println("La on start");
+
+			//We creating a first thread which searching and then loading the file asked
+			Thread searchFileThread;
+			searchFileThread = new SearchingFile(textArea1.getText());
+			searchFileThread.run();
+			
+			//Then if the file is correctly loaded we can start a new thread to scroll the text:
+			
+			new Thread(new Runnable() {	
+			
+				public void run(){
+					
+					while(MyFile.isScrolling == true){ //While stop haven't been pressed we scrolling the text
+						
+						//Scrolling action:
+						char c = MyFile.MyFileText.charAt(0);
+						String rest = MyFile.MyFileText.substring(1);
+						MyFile.MyFileText = rest + c;
+						textArea2.setText(MyFile.MyFileText);
+						
+						try{
+							
+							Thread.sleep(150);	//Using thread sleep to "controling" the scroll speed
+							
+						}catch(InterruptedException e){ 
+							
+							JOptionPane.showMessageDialog(panel1, "Error during thread execution",
+									"Warning",JOptionPane.WARNING_MESSAGE);
+						}
+						
+					}
+				}
+			
+			}).start();			
+			
+		}
+		else{
+			//When the stop button is pressed isScrolling become false 
+			//then it's stop executing the thread used for scrolling the text
+			MyFile.isScrolling = false;
+		}	
 	}
-
+	
+	
 }
